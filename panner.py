@@ -64,16 +64,13 @@ class VBAP(Panner):
         phi = np.arctan2(y, x)
 
         if phi in self.phi_deg:
-            arc = np.asarray(self.phi_deg.index(phi))
+            return np.asarray(self.phi_deg.index(phi))
         else:
-            arc = np.asarray([-1, -1], dtype=float)
             for pair in self.pairs:
                 base = self.speakers_pos[:, pair]
                 g = self.calculate_gains(source=source, base=base)
                 if g.min() > 0:
-                    arc = g
-                    break
-        return pair
+                    return pair
 
     def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True):
         
