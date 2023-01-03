@@ -42,6 +42,11 @@ class Panner:
         self.speakers_pos = self.get_speakers_pos(r=self.r, phi=self.phi_rad)
 
     def get_speakers_pos(self, r: float, phi: float) -> list:
+
+        """
+        calculate speakers position. From polar to cartesian
+        """
+        
         x = r * np.cos(phi)
         y = r * np.sin(phi)
         p = np.asarray([x, y], dtype=float)
@@ -50,13 +55,23 @@ class Panner:
 
 class VBAP(Panner):
 
-    def __init__(self, speakers_loc: list):
+    def __init__(self, speakers_loc: list) -> None:
+
+        """
+        constructor
+
+        speakers_loc: list, speakers location (see Panner class)
+        """
+
         super().__init__(speakers_loc)
         self.pairs = ConvexHull(self.speakers_pos.T).simplices
     
-    def find_arc(self, source: list):
+    def find_arc(self, source: list) -> list:
 
         """
+        find active arc.
+        return index of active arc.
+
         source_pos: list, cartesian coordinate of source [x, y]
         """
 
@@ -66,7 +81,15 @@ class VBAP(Panner):
             if np.min(g) >= 0:
                 return pair
 
-    def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True):
+    def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True) -> list:
+
+        """
+        calculate gains
+
+        source: list, source position (cartesian)
+        base: list, if you know the base (used in find_arc)
+        normalize: bool, if True gains will be normalized
+        """
         
         if base is None:
             arc = self.find_arc(source=source)
@@ -91,16 +114,34 @@ class VBAP(Panner):
 class DBAP(Panner):
 
     def __init__(self, speakers_loc: list, rolloff: float = 6, weights: list|float = 1.0) -> None:
+        
+        """
+        constructor
+
+        speakers_loc: list, speakers location (see Panner class)
+        rolloff: float, rolloff coefficient
+        weights: list|float, speakers weights
+        """
+        
         super().__init__(speakers_loc)
         self.a = rolloff/(20 * np.log10(2))
         self.w = weights
         self.center = np.mean(self.speakers_pos.T, axis=0)
     
     def calc_distance(self, pos1: list, pos2: list, r: float|None = None):
+
+        """
+        calculate distance
+        """
+
         spat_blur = r**2 if r is not None else 0
         return np.sqrt(np.sum((pos2 - pos1)**2) + spat_blur)
     
-    def get_speakers_distance(self, source: list, r: float|None = None):
+    def get_speakers_distance(self, source: list, r: float|None = None) -> list[float]:
+
+        """
+        calculate distance between speakers and source
+        """
         
         ls_pos = self.speakers_pos.T
         d = []
@@ -110,7 +151,7 @@ class DBAP(Panner):
         distance = np.asarray(d, dtype=float)
         return distance
     
-    def get_b(self, ls_distance: list[float], p: float, eta: float):
+    def get_b(self, ls_distance: list[float], p: float, eta: float) -> list[float]:
 
         """
         b_i = (u_i/u_m((1/p) - 1))^2 + 1
@@ -134,7 +175,7 @@ class DBAP(Panner):
         return b
 
     
-    def get_p(self, source: list[float], ref: list[float], r: float|None = None):
+    def get_p(self, source: list[float], ref: list[float], r: float|None = None) -> float:
 
         """
         The variable p is the distance from a reference point in the field to 
@@ -157,7 +198,7 @@ class DBAP(Panner):
 
         return value
     
-    def get_k(self, d: float, p: float, b: float):
+    def get_k(self, d: float, p: float, b: float) -> float:
 
         """
         from...
@@ -181,9 +222,11 @@ class DBAP(Panner):
         k = k_num/k_den
         return k
     
-    def get_spatial_blur(self, ref: list):
+    def get_spatial_blur(self, ref: list) -> float:
 
         """
+        calculate spatial blur
+
         r = (sum(d_ic)/N) + r_scalar 
         with 0.2 <= r_scalar <= 0.2
         """
@@ -192,7 +235,7 @@ class DBAP(Panner):
         rs = (np.sum(dist_cent)/len(dist_cent)) + 0.2
         return rs
     
-    def calculate_gains(self, source: list, ref: list|None = None, spatial_blur: float|None = None):
+    def calculate_gains(self, source: list, ref: list|None = None, spatial_blur: float|None = None) -> list[float]:
 
         """
         get loudspeakers gain factors

@@ -9,8 +9,8 @@ v = p.VBAP(speakers_loc=LS)
 
 
 phi = np.pi/4
-xs = np.cos(phi)
-ys = np.sin(phi)
+xs = 0 * np.cos(phi)
+ys = 0 * np.sin(phi)
 
 xref, yref = xs, ys
 
