@@ -8,9 +8,9 @@ d = p.DBAP(speakers_loc=LS, rolloff=6, weights=1)
 v = p.VBAP(speakers_loc=LS)
 
 
-phi = 90 * np.pi/180
-xs = .001 * np.cos(phi)
-ys = .001 * np.sin(phi)
+phi = np.pi/4
+xs = np.cos(phi)
+ys = np.sin(phi)
 
 xref, yref = xs, ys
 

@@ -59,18 +59,12 @@ class VBAP(Panner):
         """
         source_pos: list, cartesian coordinate of source [x, y]
         """
-        
-        x, y = source[0], source[1]
-        phi = np.arctan2(y, x)
 
-        if phi in self.phi_deg:
-            return np.asarray(self.phi_deg.index(phi))
-        else:
-            for pair in self.pairs:
-                base = self.speakers_pos[:, pair]
-                g = self.calculate_gains(source=source, base=base)
-                if g.min() > 0:
-                    return pair
+        for pair in self.pairs:
+            base = self.speakers_pos[:, pair]
+            g = self.calculate_gains(source=source, base=base)
+            if np.min(g) >= 0:
+                return pair
 
     def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True):
         
@@ -82,11 +76,7 @@ class VBAP(Panner):
             arc = np.arange(len(source))
             g = np.zeros(len(source), dtype=float)
         
-        if base.ndim > 1:
-            gains = np.linalg.inv(base) @ source
-        else:
-            gains = 1
-        
+        gains = np.linalg.inv(base) @ source
         g[arc] = gains
 
         if normalize:
