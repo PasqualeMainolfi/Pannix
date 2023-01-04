@@ -4,11 +4,12 @@ VBAP and DBAP implementation
 reference:
     vbap -> V. Pulkki, Virtual Sound Source Positioning Using Vector Base Amplitude Panning
     dbap -> T. Lossius, P. Baltazar, DBAP Distance-Based Amplitude Panning
-         -> Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm
+         -> J. Sundstrom, Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm
 """
 
 import numpy as np
 from scipy.spatial import ConvexHull
+import matplotlib.pyplot as plt
 
 
 class Panner:
@@ -16,15 +17,26 @@ class Panner:
     TO_RAD = lambda x: x * np.pi/180
     CHECK_DEG = lambda x: x - 360 if x > 180 else x
 
-    def __init__(self, speakers_loc: list) -> None:
+    def __init__(
+    
+        self, 
+        loudspeaker_loc: list|str, 
+        loudspeaker_num: int, 
+    
+    ) -> None:
 
         """
-        speakers_loc: list[tuple|float], list of speakers location must be [(r, phi), ...] or [phi, phi, (r, phi), ...]
+        loudspeaker_loc: list[tuple|float]|None, if list, pass a list of loudspeaker location ->
+        must be [(r, phi), ...] or [phi, phi, (r, phi), ...]. If None, specify
+        only the number of loudspeaker
+        loudspeaker_num: int|None, number of loudspeaker if loudspeaker_loc is None
         """
+
+        loc = self.__define_loudspeaker_loc(loc=loudspeaker_loc, num=loudspeaker_num)
 
         _phi_deg = []
         _r = []
-        for p in speakers_loc:
+        for p in loc:
 
             if isinstance(p, tuple):
                 mag = p[0]
@@ -39,32 +51,97 @@ class Panner:
         self.phi_deg = list(map(Panner.CHECK_DEG, _phi_deg))
         self.phi_rad = np.asarray(list(map(Panner.TO_RAD, self.phi_deg)), dtype=float)
         self.r = np.asarray(_r, dtype=float)
-        self.speakers_pos = self.get_speakers_pos(r=self.r, phi=self.phi_rad)
+        self.loudspeaker_pos = self.get_loudspeaker_pos(r=self.r, phi=self.phi_rad)
+    
+    def __define_loudspeaker_loc(self, loc: list|str, num: int) -> list:
 
-    def get_speakers_pos(self, r: float, phi: float) -> list:
+        if isinstance(loc, list):
+            return loc
+        else:
+            offset = 180/num
+            step = 360/num
+            s_loc = []
+            for i in range(num):
+                s_loc.append(step * i + offset)
+            return s_loc
+            
+    def get_loudspeaker_pos(self, r: float, phi: float) -> list:
 
         """
-        calculate speakers position. From polar to cartesian
+        calculate loudspeaker position
         """
         
         x = r * np.cos(phi)
         y = r * np.sin(phi)
         p = np.asarray([x, y], dtype=float)
         return p
+    
+    def plot_loudspeaker_loc(self, source=(0, 0), g: list|None = None):
+
+        """
+        plot loudspeaker and source position
+
+        source: tuple, source position (cartesian coordinate)
+        g: list|None, if list plot loudspeaker gains. If None plot only loudspeaker layout
+        """
+
+        plt.style.use("ggplot")
+
+        posx = self.loudspeaker_pos[0, :]
+        posy = self.loudspeaker_pos[1, :]
+
+        last_posx = [posx[-1], posx[0]]
+        last_posy = [posy[-1], posy[0]]
+
+        if g is None:
+            plt.title("LOUDSPEAKER LAYOUT", weight="bold")
+            plt.plot(posx, posy, "-o", c="k", lw=0.3)
+            plt.plot(last_posx, last_posy, "-o", c="k", lw=0.3)
+            plt.scatter(source[0], source[1], c="r", s=70)
+            plt.plot([0, source[0]], [0, source[1]], c="r", lw=0.1)
+            plt.annotate("S", source, ha="center", xytext=(-10, 0), textcoords="offset points")
+            plt.xlabel("x")
+            plt.ylabel("y")
+        else:
+            fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+            ax[0].set_title("LOUDSPEAKER LAYOUT", weight="bold")
+            ax[0].plot(posx, posy, "-o", c="k", lw=0.3)
+            ax[0].plot(last_posx, last_posy, "-o", c="k", lw=0.3)
+            ax[0].scatter(source[0], source[1], c="r", s=70)
+            ax[0].plot([0, source[0]], [0, source[1]], c="r", lw=0.1)
+            ax[0].annotate("S", source, ha="center", xytext=(-10, 0), textcoords="offset points")
+            ax[0].set_xlabel("x")
+            ax[0].set_ylabel("y")
+
+            ax[1].set_title("GAINS", weight="bold")
+            ax[1].bar([f"{x+1}" for x in range(len(g))], g, color="b")
+            ax[1].set_xlabel("speakers")
+            ax[1].set_ylabel("g")
+
+        plt.subplots_adjust(wspace=0.3)
+        plt.grid(alpha=0.7)
+        plt.show()
+
 
 
 class VBAP(Panner):
 
-    def __init__(self, speakers_loc: list) -> None:
+    def __init__(
+
+        self, 
+        loudspeaker_loc: list|str = "auto", 
+        loudspeaker_num: int = 4,
+
+        ) -> None:
 
         """
         constructor
 
-        speakers_loc: list, speakers location (see Panner class)
+        loudspeaker_loc: list, loudspeaker location (see Panner class)
         """
 
-        super().__init__(speakers_loc)
-        self.pairs = ConvexHull(self.speakers_pos.T).simplices
+        super().__init__(loudspeaker_loc, loudspeaker_num)
+        self.pairs = ConvexHull(self.loudspeaker_pos.T).simplices
     
     def find_arc(self, source: list) -> list:
 
@@ -76,7 +153,7 @@ class VBAP(Panner):
         """
 
         for pair in self.pairs:
-            base = self.speakers_pos[:, pair]
+            base = self.loudspeaker_pos[:, pair]
             g = self.calculate_gains(source=source, base=base)
             if np.min(g) >= 0:
                 return pair
@@ -93,8 +170,8 @@ class VBAP(Panner):
         
         if base is None:
             arc = self.find_arc(source=source)
-            base = self.speakers_pos[:, arc]
-            g = np.zeros(self.speakers_pos.shape[1], dtype=float)
+            base = self.loudspeaker_pos[:, arc]
+            g = np.zeros(self.loudspeaker_pos.shape[1], dtype=float)
         else:
             arc = np.arange(len(source))
             g = np.zeros(len(source), dtype=float)
@@ -113,20 +190,27 @@ class VBAP(Panner):
 
 class DBAP(Panner):
 
-    def __init__(self, speakers_loc: list, rolloff: float = 6, weights: list|float = 1.0) -> None:
+    def __init__(
+
+        self, loudspeaker_loc: list|str = "auto", 
+        loudspeaker_num: int = 4, 
+        rolloff: float = 6, 
+        weights: list|float = 1.0
+
+        ) -> None:
         
         """
         constructor
 
-        speakers_loc: list, speakers location (see Panner class)
+        loudspeaker_loc: list, loudspeaker location (see Panner class)
         rolloff: float, rolloff coefficient
-        weights: list|float, speakers weights
+        weights: list|float, loudspeaker weights
         """
         
-        super().__init__(speakers_loc)
+        super().__init__(loudspeaker_loc, loudspeaker_num)
         self.a = rolloff/(20 * np.log10(2))
         self.w = weights
-        self.center = np.mean(self.speakers_pos.T, axis=0)
+        self.center = np.mean(self.loudspeaker_pos.T, axis=0)
     
     def calc_distance(self, pos1: list, pos2: list, r: float|None = None):
 
@@ -137,13 +221,13 @@ class DBAP(Panner):
         spat_blur = r**2 if r is not None else 0
         return np.sqrt(np.sum((pos2 - pos1)**2) + spat_blur)
     
-    def get_speakers_distance(self, source: list, r: float|None = None) -> list[float]:
+    def get_loudspeaker_distance(self, source: list, r: float|None = None) -> list[float]:
 
         """
-        calculate distance between speakers and source
+        calculate distance between loudspeaker and source
         """
         
-        ls_pos = self.speakers_pos.T
+        ls_pos = self.loudspeaker_pos.T
         d = []
         for pos in ls_pos:
             dist = self.calc_distance(pos1=pos, pos2=source, r=r)
@@ -157,9 +241,9 @@ class DBAP(Panner):
         b_i = (u_i/u_m((1/p) - 1))^2 + 1
         u_i = (d_i - max(d))^2_normalized + e
 
-        m = index of the median distaced loudspeaker from the virtual source
-        max(d) = the loudspeaker furthest from the virtual source
-        e = small value to avoid 0 gain in the most distant loudspeaker, 
+        m = index of the median distaced loudloudspeaker from the virtual source
+        max(d) = the loudloudspeaker furthest from the virtual source
+        e = small value to avoid 0 gain in the most distant loudloudspeaker, 
         typically set to r/N
         """
 
@@ -179,7 +263,7 @@ class DBAP(Panner):
 
         """
         The variable p is the distance from a reference point in the field to 
-        the most distant speaker, max(d_s) = max{d_s1, ..., d_sN }, 
+        the most distant loudspeaker, max(d_s) = max{d_s1, ..., d_sN }, 
         divided by the distance between the reference and the virtual source, 
         d_rs, clipped to 1.
     
@@ -188,7 +272,7 @@ class DBAP(Panner):
             | 1, otherwise
         """
 
-        ds = self.get_speakers_distance(source=ref, r=r)
+        ds = self.get_loudspeaker_distance(source=ref, r=r)
         max_ds = ds.max()
 
         drs = self.calc_distance(pos1=ref, pos2=source, r=r)
@@ -231,14 +315,14 @@ class DBAP(Panner):
         with 0.2 <= r_scalar <= 0.2
         """
 
-        dist_cent = self.get_speakers_distance(source=ref)
+        dist_cent = self.get_loudspeaker_distance(source=ref)
         rs = (np.sum(dist_cent)/len(dist_cent)) + 0.2
         return rs
     
     def calculate_gains(self, source: list, ref: list|None = None, spatial_blur: float|None = None) -> list[float]:
 
         """
-        get loudspeakers gain factors
+        get loudloudspeaker gain factors
         v_i = kw_ib_i/(d_i)^a
 
         source_pos: list, cartesian coordinate of source position
@@ -254,9 +338,9 @@ class DBAP(Panner):
         else:
             spat_blur = self.get_spatial_blur(ref=ref)
 
-        eta = spat_blur/self.speakers_pos.shape[1]
+        eta = spat_blur/self.loudspeaker_pos.shape[1]
 
-        d = self.get_speakers_distance(source=source, r=spat_blur)
+        d = self.get_loudspeaker_distance(source=source, r=spat_blur)
         p = self.get_p(source=source, ref=ref, r=spat_blur)
         b = self.get_b(ls_distance=d, p=p, eta=eta)
         k = self.get_k(d=d, p=p, b=b)
