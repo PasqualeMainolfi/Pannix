@@ -1,6 +1,6 @@
 ### **2D PANNER**  
 
-Python implementation of VBAP and DBAP algorithms, from:   
+Python implementation of 2D VBAP and DBAP algorithms, from:   
 - V. Pulkki, *Virtual Sound Source Positioning Using Vector Base Amplitude Panning*
 - T. Lossius, P. Baltazar, *DBAP Distance-Based Amplitude Panning*
 - J. Sundstrom, *Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm*
