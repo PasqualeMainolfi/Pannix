@@ -107,14 +107,14 @@ class Panner:
             fig, ax = plt.subplots(1, 2, figsize=(15, 5))
 
             ax[0].set_title("LOUDSPEAKER LAYOUT", weight="bold")
-            ax[0].plot(posx, posy, "-o", c="k", lw=0.3)
-            ax[0].plot(last_posx, last_posy, "-o", c="k", lw=0.3)
+            ax[0].plot(posx, posy, "-o", c="k", lw=0.3, zorder=1)
+            ax[0].plot(last_posx, last_posy, "-o", c="k", lw=0.3, zorder=1)
             if mode == "dbap":
                 for i in range(len(posx)):
                     ax[0].plot((source[0], posx[i]), (source[1], posy[i]), c="b", lw=0.5, zorder=1)
             else:
                 for i in base:
-                    ax[0].plot((source[0], posx[i]), (source[1], posy[i]), c="b", lw=0.5)
+                    ax[0].plot((source[0], posx[i]), (source[1], posy[i]), c="b", lw=0.5, zorder=1)
             ax[0].scatter(source[0], source[1], c="r", s=70)
             # ax[0].plot([0, source[0]], [0, source[1]], c="r", lw=0.1) # sorgente
             ax[0].annotate("S", source, ha="center", xytext=(-10, 0), textcoords="offset points", weight="bold")
@@ -150,26 +150,24 @@ class VBAP(Panner):
 
         super().__init__(loudspeaker_loc, loudspeaker_num)
         self.pairs = ConvexHull(self.loudspeaker_pos.T).simplices
-        self.base = None
     
-    def find_arc(self, source: list) -> list:
+    def find_arc(self, source: list, angle: float) -> list:
 
         """
         find active arc.
         return index of active arc.
 
-        source_pos: list, cartesian coordinate of source [x, y]
+        source: list, cartesian coordinate of source [x, y]
+        angle: float, pos angle in rad
         """
 
-        angle = np.arctan2(source[1], source[0])
-
         if angle in self.phi_rad:
-            return np.where(angle==self.phi_rad)[0, 0]
+            return np.where(angle==self.phi_rad)[0][0]
         else:
             for pair in self.pairs:
                 base = self.loudspeaker_pos[:, pair]
                 g = self.calculate_gains(source=source, base=base)
-                if np.min(g) > 0:
+                if np.min(g) >= 0:
                     return pair
 
     def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True) -> list:
@@ -182,8 +180,10 @@ class VBAP(Panner):
         normalize: bool, if True gains will be normalized
         """
 
+        angle = np.arctan2(source[1], source[0])
+        
         if base is None:
-            arc = self.find_arc(source=source)
+            arc = self.find_arc(source=source, angle=angle)
             base = self.loudspeaker_pos[:, arc]
             g = np.zeros(self.loudspeaker_pos.shape[1], dtype=float)
         else:
@@ -206,7 +206,7 @@ class VBAP(Panner):
         return g
 
     def display_panning(self, source: list|tuple):
-        g = self.calculate_gains(source=source)
+        g = self.calculate_gains(source=source, normalize=False)
         base = [i for i in range(len(g)) if g[i] != 0]
         self.plot_panning(source=source, g=g, base=base, mode="vbap")
 

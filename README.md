@@ -44,8 +44,8 @@ DBAP g = [0.09354905 0.98908099 0.09354905 0.06493032]
 VBAP g = [0.18629955 0.54066234 0. 0. 0. 0. 0. 0. 0. 0.]
 
 ```
-plot loudspeaker layout (for example plot vbap speaker layout)
+plot loudspeaker layout and relativa amp
 
 ```python
-d.plot_loudspeaker_loc(source=(xs, ys), g=d_gains)
+v.display_panning(source=(xs, ys))
 ```
