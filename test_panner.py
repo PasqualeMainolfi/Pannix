@@ -4,7 +4,8 @@ import numpy as np
 
 LS = [135, 45, -45, -135]
 
-d = p.DBAP(loudspeaker_loc=LS, rolloff=6, weights=1)
+# d = p.DBAP(loudspeaker_loc=LS, rolloff=6, weights=1)
+d = p.DBAP(loudspeaker_num=15, rolloff=6, weights=1)
 v = p.VBAP(loudspeaker_num=15)
 
 
@@ -21,4 +22,4 @@ v_gains = v.calculate_gains(source=[xs, ys], normalize=False)
 
 # print(f"DBAP g = {d_gains}\nVBAP g = {v_gains}")
 
-v.plot_loudspeaker_loc(source=(xs, ys), g=v_gains, mode="vbap")
+d.display_panning(source=(xs, ys))

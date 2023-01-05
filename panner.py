@@ -76,13 +76,14 @@ class Panner:
         p = np.asarray([x, y], dtype=float)
         return p
     
-    def plot_loudspeaker_loc(self, source=(0, 0), g: list|None = None, mode: str = "vbap"):
+    def plot_panning(self, source: list|tuple, g: list|None, base:list, mode: str):
 
         """
         plot loudspeaker and source position
 
         source: tuple, source position (cartesian coordinate)
         g: list|None, if list plot loudspeaker gains. If None plot only loudspeaker layout
+        mode: str, vbap or dbap
         """
 
         plt.style.use("ggplot")
@@ -110,20 +111,23 @@ class Panner:
             ax[0].plot(last_posx, last_posy, "-o", c="k", lw=0.3)
             if mode == "dbap":
                 for i in range(len(posx)):
+                    ax[0].plot((source[0], posx[i]), (source[1], posy[i]), c="b", lw=0.5, zorder=1)
+            else:
+                for i in base:
                     ax[0].plot((source[0], posx[i]), (source[1], posy[i]), c="b", lw=0.5)
             ax[0].scatter(source[0], source[1], c="r", s=70)
-            ax[0].plot([0, source[0]], [0, source[1]], c="r", lw=0.1) # sorgente
-            ax[0].annotate("S", source, ha="center", xytext=(-10, 0), textcoords="offset points")
+            # ax[0].plot([0, source[0]], [0, source[1]], c="r", lw=0.1) # sorgente
+            ax[0].annotate("S", source, ha="center", xytext=(-10, 0), textcoords="offset points", weight="bold")
             ax[0].set_xlabel("x")
             ax[0].set_ylabel("y")
 
             ax[1].set_title("GAINS", weight="bold")
-            ax[1].bar([f"{x+1}" for x in range(len(g))], g, color="b")
+            ax[1].bar([f"{x+1}" for x in range(len(g))], g, color="b", width=0.3)
             ax[1].set_xlabel("speakers")
             ax[1].set_ylabel("g")
 
         plt.subplots_adjust(wspace=0.3)
-        plt.grid(alpha=0.7)
+        plt.grid(alpha=0.7, zorder=0)
         plt.show()
 
 
@@ -146,6 +150,7 @@ class VBAP(Panner):
 
         super().__init__(loudspeaker_loc, loudspeaker_num)
         self.pairs = ConvexHull(self.loudspeaker_pos.T).simplices
+        self.base = None
     
     def find_arc(self, source: list) -> list:
 
@@ -159,7 +164,7 @@ class VBAP(Panner):
         angle = np.arctan2(source[1], source[0])
 
         if angle in self.phi_rad:
-            return np.where(angle==self.phi_rad)[0][0]
+            return np.where(angle==self.phi_rad)[0, 0]
         else:
             for pair in self.pairs:
                 base = self.loudspeaker_pos[:, pair]
@@ -199,6 +204,12 @@ class VBAP(Panner):
             g *= np.sqrt(2)/2
         
         return g
+
+    def display_panning(self, source: list|tuple):
+        g = self.calculate_gains(source=source)
+        base = [i for i in range(len(g)) if g[i] != 0]
+        self.plot_panning(source=source, g=g, base=base, mode="vbap")
+
     
 
 class DBAP(Panner):
@@ -362,6 +373,10 @@ class DBAP(Panner):
 
         v = (k * w * b)/d**a
         return v
+    
+    def display_panning(self, source: list|tuple):
+        g = self.calculate_gains(source=source)
+        self.plot_panning(source=source, g=g, base=None, mode="dbap")
 
 
     
