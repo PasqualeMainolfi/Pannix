@@ -76,7 +76,7 @@ class Panner:
         p = np.asarray([x, y], dtype=float)
         return p
     
-    def plot_loudspeaker_loc(self, source=(0, 0), g: list|None = None):
+    def plot_loudspeaker_loc(self, source=(0, 0), g: list|None = None, mode: str = "vbap"):
 
         """
         plot loudspeaker and source position
@@ -104,11 +104,15 @@ class Panner:
             plt.ylabel("y")
         else:
             fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+
             ax[0].set_title("LOUDSPEAKER LAYOUT", weight="bold")
             ax[0].plot(posx, posy, "-o", c="k", lw=0.3)
             ax[0].plot(last_posx, last_posy, "-o", c="k", lw=0.3)
+            if mode == "dbap":
+                for i in range(len(posx)):
+                    ax[0].plot((source[0], posx[i]), (source[1], posy[i]), c="b", lw=0.5)
             ax[0].scatter(source[0], source[1], c="r", s=70)
-            ax[0].plot([0, source[0]], [0, source[1]], c="r", lw=0.1)
+            ax[0].plot([0, source[0]], [0, source[1]], c="r", lw=0.1) # sorgente
             ax[0].annotate("S", source, ha="center", xytext=(-10, 0), textcoords="offset points")
             ax[0].set_xlabel("x")
             ax[0].set_ylabel("y")
@@ -152,11 +156,16 @@ class VBAP(Panner):
         source_pos: list, cartesian coordinate of source [x, y]
         """
 
-        for pair in self.pairs:
-            base = self.loudspeaker_pos[:, pair]
-            g = self.calculate_gains(source=source, base=base)
-            if np.min(g) >= 0:
-                return pair
+        angle = np.arctan2(source[1], source[0])
+
+        if angle in self.phi_rad:
+            return np.where(angle==self.phi_rad)[0][0]
+        else:
+            for pair in self.pairs:
+                base = self.loudspeaker_pos[:, pair]
+                g = self.calculate_gains(source=source, base=base)
+                if np.min(g) > 0:
+                    return pair
 
     def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True) -> list:
 
@@ -167,7 +176,7 @@ class VBAP(Panner):
         base: list, if you know the base (used in find_arc)
         normalize: bool, if True gains will be normalized
         """
-        
+
         if base is None:
             arc = self.find_arc(source=source)
             base = self.loudspeaker_pos[:, arc]
@@ -175,8 +184,12 @@ class VBAP(Panner):
         else:
             arc = np.arange(len(source))
             g = np.zeros(len(source), dtype=float)
-        
-        gains = np.linalg.inv(base) @ source
+
+        if base.ndim > 1:
+            gains = np.linalg.inv(base) @ source
+        else:
+            gains = 1
+
         g[arc] = gains
 
         if normalize:
