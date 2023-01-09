@@ -10,6 +10,7 @@ reference:
 import numpy as np
 from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
+from ray_intersection import Ray
 
 
 class Panner:
@@ -169,8 +170,21 @@ class VBAP(Panner):
                 g = self.calculate_gains(source=source, base=base)
                 if np.min(g) >= 0:
                     return pair
+    
+    def ray_cast_find_arc(self, ray: Ray, angle: float):
 
-    def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True) -> list:
+        if angle in self.phi_rad:
+            return np.where(angle==self.phi_rad)[0][0]
+        else:
+            for pair in self.pairs:
+                base = self.loudspeaker_pos[:, pair]
+                cast = ray.get_intersection(segment=base)
+                if cast is not None:
+                    return pair
+            return None
+
+
+    def calculate_gains(self, source: list, base: list|None = None, normalize: bool = True, mode: str = "default") -> list:
 
         """
         calculate gains
@@ -178,12 +192,22 @@ class VBAP(Panner):
         source: list, source position (cartesian)
         base: list, if you know the base (used in find_arc)
         normalize: bool, if True gains will be normalized
+        mode: str, "default" = pulkki method, "ray" = ray cast find arc
         """
 
         angle = np.arctan2(source[1], source[0])
         
         if base is None:
-            arc = self.find_arc(source=source, angle=angle)
+            if mode == "default":
+                arc = self.find_arc(source=source, angle=angle)
+            elif mode == "ray":
+                r = Ray()
+                r.set_position(pos=source)
+                arc = self.ray_cast_find_arc(ray=r, angle=angle)
+                arc = arc if arc is not None else 0
+            else:
+                print("mode not implemented!")
+                exit()
             base = self.loudspeaker_pos[:, arc]
             g = np.zeros(self.loudspeaker_pos.shape[1], dtype=float)
         else:
@@ -193,7 +217,7 @@ class VBAP(Panner):
         if base.ndim > 1:
             gains = np.linalg.inv(base) @ source
         else:
-            gains = 1
+            gains = 1 if mode == "default" else arc
 
         g[arc] = gains
 
@@ -210,7 +234,6 @@ class VBAP(Panner):
         base = [i for i in range(len(g)) if g[i] != 0]
         self.plot_panning(source=source, g=g, base=base, mode="vbap")
 
-    
 
 class DBAP(Panner):
 

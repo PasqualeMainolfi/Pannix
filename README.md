@@ -5,6 +5,8 @@ Python implementation of 2D VBAP and DBAP algorithms, from:
 - T. Lossius, P. Baltazar, *DBAP Distance-Based Amplitude Panning*
 - J. Sundstrom, *Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm*
 
+moreover, in a vbap process, I use a line-line intersection algorithm which allows to reduce the computational times during the search of the active arc.
+
 Example:  
 ```python
 import panner as p
@@ -32,7 +34,10 @@ xref, yref = xs, ys
 d_gains = d.calculate_gains(source=[xs, ys], ref=None, spatial_blur=0.1)
 
 # VBAP
-v_gains = v.calculate_gains(source=[xs, ys], normalize=False)
+# with mode argument specify which version you want to use: 
+# mode="default" -> pulkki version
+# mode="ray" -> version with line-line intersection algo 
+v_gains = v.calculate_gains(source=[xs, ys], normalize=False, mode="ray")
 
 print(d_gains)
 print(v_gains)
@@ -49,3 +54,24 @@ plot loudspeaker layout and relativa amp
 ```python
 v.display_panning(source=(xs, ys))
 ```
+
+testing performance:  
+```python
+for i in range(100000):
+    v_gains = v.calculate_gains(source=[xs, ys], normalize=False, mode="default")
+```
+```console
+computation time: 22.52220106124878 sec.
+```
+
+```python
+for i in range(100000):
+    v_gains = v.calculate_gains(source=[xs, ys], normalize=False, mode="ray")
+```
+```console
+computation time: 1.339257001876831 sec.
+```
+so...
+
+**1581.693732396861% increase in performance  
+16.81693732396861x faster**
