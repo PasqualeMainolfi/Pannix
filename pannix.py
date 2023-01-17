@@ -84,6 +84,42 @@ class Pannix:
         p = np.asarray([x, y], dtype=float)
         return p
     
+    def car_to_pol(self, x: float, y: float) -> tuple:
+
+        """
+        from cartesian to polar
+
+        x: float
+        y: float
+
+        return: tuple, (rho, phi)
+        """
+
+        rho = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+
+        return (rho, phi)
+    
+    def pol_to_cart(self, rho: float, phi: float, mode: str = "rad") -> tuple:
+
+        """
+        from polar to cartesian
+
+        rho: float
+        phi: float
+        mode: str, rad or deg
+
+        return: tuple, (x, y)
+        """
+
+        if mode == "deg":
+            phi = Pannix.TO_RAD(Pannix.CHECK_DEG(phi))
+
+        x = rho * np.cos(phi)
+        y = rho * np.sin(phi)
+
+        return (x, y)
+    
     def plot_panning(self, source: list|tuple, g: list|None, base:list, mode: str):
 
         """
@@ -157,7 +193,16 @@ class VBAP(Pannix):
         """
 
         super().__init__(loudspeaker_loc, loudspeaker_num)
-        self.pairs = ConvexHull(self.loudspeaker_pos.T).simplices
+        length = len(self.loudspeaker_pos[1])
+        if length == 2:
+            self.pairs = np.array([[0, 1]], dtype=int)
+        elif length > 2:
+            self.pairs = ConvexHull(self.loudspeaker_pos.T).simplices
+        else:
+            raise Exception("[ERROR] must be at least two loudspeakers!")
+        
+        self.__mode_find_arc = "default"
+        
     
     def find_arc(self, source: list, angle: float) -> list:
 
@@ -170,6 +215,7 @@ class VBAP(Pannix):
         """
 
         if angle in self.phi_rad:
+            print("ok")
             return np.where(angle==self.phi_rad)[0][0]
         else:
             for pair in self.pairs:
@@ -202,6 +248,8 @@ class VBAP(Pannix):
         mode: str, "default" = pulkki method, "ray" = ray cast find arc
         """
 
+        self.__mode_find_arc = mode
+
         angle = np.arctan2(source[1], source[0])
         
         if base is None:
@@ -220,7 +268,7 @@ class VBAP(Pannix):
         else:
             arc = np.arange(len(source))
             g = np.zeros(len(source), dtype=float)
-
+        
         if base.ndim > 1:
             gains = np.linalg.inv(base) @ source
         else:
@@ -237,7 +285,7 @@ class VBAP(Pannix):
         return g
 
     def display_panning(self, source: list|tuple):
-        g = self.calculate_gains(source=source, normalize=False)
+        g = self.calculate_gains(source=source, normalize=False, mode=self.__mode_find_arc)
         base = [i for i in range(len(g)) if g[i] != 0]
         self.plot_panning(source=source, g=g, base=base, mode="vbap")
 
