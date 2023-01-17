@@ -5,7 +5,12 @@ Python implementation of 2D VBAP and DBAP algorithms, from:
 - T. Lossius, P. Baltazar, *DBAP Distance-Based Amplitude Panning*
 - J. Sundstrom, *Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm*
 
-moreover, in a vbap process, I use a line-line intersection algorithm which allows to reduce the computational times during the search of the active arc.
+moreover, the active arc searching function (2D) has been modified, implementing a line-line intersection algortithm
+which allows for speeding up the computation (see ray_intersection.py).
+
+reference: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection  
+
+If you use this version of VBAP algo, please cite me.
 
 Example:  
 ```python
