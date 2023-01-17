@@ -4,7 +4,14 @@ VBAP and DBAP implementation
 reference:
     vbap -> V. Pulkki, Virtual Sound Source Positioning Using Vector Base Amplitude Panning
     dbap -> T. Lossius, P. Baltazar, DBAP Distance-Based Amplitude Panning
-         -> J. Sundstrom, Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm
+         -> J. Sundstrom, Speaker Placement Agnosticism: Improving the Distance-Based Amplitude Panning Algorithm  
+
+moreover, the active arc searching function (2D) has been modified, implementing a line-line intersection algortithm
+which allows for speeding up the computation (see ray_intersection.py).
+
+reference: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection  
+
+If you use this version of VBAP algo, please cite me.
 """
 
 import numpy as np
@@ -13,7 +20,7 @@ import matplotlib.pyplot as plt
 from ray_intersection import Ray
 
 
-class Panner:
+class Pannix:
 
     TO_RAD = lambda x: x * np.pi/180
     CHECK_DEG = lambda x: x - 360 if x > 180 else x
@@ -49,8 +56,8 @@ class Panner:
             _r.append(mag)
             _phi_deg.append(phi)
 
-        self.phi_deg = list(map(Panner.CHECK_DEG, _phi_deg))
-        self.phi_rad = np.asarray(list(map(Panner.TO_RAD, self.phi_deg)), dtype=float)
+        self.phi_deg = list(map(Pannix.CHECK_DEG, _phi_deg))
+        self.phi_rad = np.asarray(list(map(Pannix.TO_RAD, self.phi_deg)), dtype=float)
         self.r = np.asarray(_r, dtype=float)
         self.loudspeaker_pos = self.get_loudspeaker_pos(r=self.r, phi=self.phi_rad)
     
@@ -133,7 +140,7 @@ class Panner:
 
 
 
-class VBAP(Panner):
+class VBAP(Pannix):
 
     def __init__(
 
@@ -146,7 +153,7 @@ class VBAP(Panner):
         """
         constructor
 
-        loudspeaker_loc: list, loudspeaker location (see Panner class)
+        loudspeaker_loc: list, loudspeaker location (see Pannix class)
         """
 
         super().__init__(loudspeaker_loc, loudspeaker_num)
@@ -206,7 +213,7 @@ class VBAP(Panner):
                 arc = self.ray_cast_find_arc(ray=r, angle=angle)
                 arc = arc if arc is not None else 0
             else:
-                print("mode not implemented!")
+                print("[ERROR] mode not implemented... must be default or ray!")
                 exit()
             base = self.loudspeaker_pos[:, arc]
             g = np.zeros(self.loudspeaker_pos.shape[1], dtype=float)
@@ -235,7 +242,7 @@ class VBAP(Panner):
         self.plot_panning(source=source, g=g, base=base, mode="vbap")
 
 
-class DBAP(Panner):
+class DBAP(Pannix):
 
     def __init__(
 
@@ -249,7 +256,7 @@ class DBAP(Panner):
         """
         constructor
 
-        loudspeaker_loc: list, loudspeaker location (see Panner class)
+        loudspeaker_loc: list, loudspeaker location (see Pannix class)
         rolloff: float, rolloff coefficient
         weights: list|float, loudspeaker weights
         """
