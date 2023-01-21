@@ -250,7 +250,6 @@ class VBAP(Pannix):
         self.__mode_find_arc = mode
 
         angle = np.round(np.arctan2(source[1], source[0]), decimals=15)
-        print(angle, self.phi_rad[0])
         
         if base is None:
             if mode == "default":
