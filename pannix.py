@@ -57,7 +57,7 @@ class Pannix:
             _phi_deg.append(phi)
 
         self.phi_deg = list(map(Pannix.CHECK_DEG, _phi_deg))
-        self.phi_rad = np.asarray(list(map(Pannix.TO_RAD, self.phi_deg)), dtype=float)
+        self.phi_rad = np.round(np.asarray(list(map(Pannix.TO_RAD, self.phi_deg)), dtype=np.float64), decimals=15)
         self.r = np.asarray(_r, dtype=float)
         self.loudspeaker_pos = self.get_loudspeaker_pos(r=self.r, phi=self.phi_rad)
     
@@ -215,7 +215,6 @@ class VBAP(Pannix):
         """
 
         if angle in self.phi_rad:
-            print("ok")
             return np.where(angle==self.phi_rad)[0][0]
         else:
             for pair in self.pairs:
@@ -250,7 +249,8 @@ class VBAP(Pannix):
 
         self.__mode_find_arc = mode
 
-        angle = np.arctan2(source[1], source[0])
+        angle = np.round(np.arctan2(source[1], source[0]), decimals=15)
+        print(angle, self.phi_rad[0])
         
         if base is None:
             if mode == "default":
@@ -259,7 +259,7 @@ class VBAP(Pannix):
                 r = Ray()
                 r.set_position(pos=source)
                 arc = self.ray_cast_find_arc(ray=r, angle=angle)
-                arc = arc if arc is not None else 0
+                arc = arc if arc is not None else -1
             else:
                 print("[ERROR] mode not implemented... must be default or ray!")
                 exit()
@@ -272,7 +272,7 @@ class VBAP(Pannix):
         if base.ndim > 1:
             gains = np.linalg.inv(base) @ source
         else:
-            gains = 1 if mode == "default" else arc
+            gains = 1 if arc != -1 else 0
 
         g[arc] = gains
 
