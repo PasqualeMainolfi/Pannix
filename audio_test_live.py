@@ -5,8 +5,6 @@ import wave
 import tools
 
 
-# TODO: code pan block
-
 FILE = "./audio_file/vox.wav"
 CHUNK = 512
 
@@ -34,7 +32,6 @@ pan = px.VBAP(loudspeaker_loc=[90, 0])
 # g = pan.calculate_gains(source=source, normalize=True, mode="ray")
 # pan.display_panning(source=source)
 
-frames = []
 angle = 0
 step = 0.1
 while file_data:
@@ -48,7 +45,6 @@ while file_data:
         out[:, i] = out[:, i] * g[i]
     y = out.tobytes()
     stream.write(y)
-    frames.append(y)
     file_data = audio_file.readframes(CHUNK)
 
 stream.stop_stream()
