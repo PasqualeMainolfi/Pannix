@@ -52,8 +52,7 @@ def export_multitrack(frames: list[list], name: str, sample_rate: int = 44100, s
     
     f = np.array(frames, dtype=object)
     y = f[0].copy()
-
-    for i in range(1, len(frames[0])):
+    for i in range(1, len(frames)):
         y = np.concatenate((y, f[i]))
     
     y = y.T

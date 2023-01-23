@@ -5,7 +5,7 @@ import tools as t
 
 FILE = "./audio_file/vox.wav"
 CHNLS = 8
-CHUNK = 512
+CHUNK = 1024
 
 # open file
 af = wave.open(FILE, "rb")
@@ -16,8 +16,8 @@ ad = af.readframes(CHUNK)
 pan = px.VBAP(loudspeaker_num=CHNLS)
 
 # apply pan
+frames_to_export = []
 frames = []
-frames_out = []
 angle = 0
 step = 0.5
 
@@ -29,7 +29,8 @@ while ad:
 
     for i in range(CHNLS):
         y[:, i] = y[:, i] * g[i]
-    frames_out.append(y)
+    
+    frames_to_export.append(y)
     frames.append(y.tobytes())
     
     angle += step
@@ -46,12 +47,12 @@ while ad:
 # )
 
 
-# t.export_multitrack(
-#     frames=frames_out,
-#     name="prova_multitrack",
-#     sample_rate=sample_rate,
-#     sampwidth=2
-# )
+t.export_multitrack(
+    frames=frames_to_export,
+    name="prova_multitrack",
+    sample_rate=sample_rate,
+    sampwidth=2
+)
 
 # f = np.array(frames_out, dtype=object)
 
