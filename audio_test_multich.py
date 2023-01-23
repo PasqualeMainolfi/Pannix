@@ -20,6 +20,7 @@ frames = []
 frames_out = []
 angle = 0
 step = 0.5
+
 while ad:
     y = t.to_nchnls(ad, nchnls=CHNLS, format=np.int16)
 
@@ -36,15 +37,21 @@ while ad:
 
     ad = af.readframes(CHUNK)
 
-t.save_audio_file(
-    path="multich.wav", 
-    frames=frames, 
-    sample_rate=af.getframerate(),
-    nchnls=CHNLS,
-    sampwidth=2
-)
+# t.save_audio_file(
+#     path="multich.wav", 
+#     frames=frames, 
+#     sample_rate=af.getframerate(),
+#     nchnls=CHNLS,
+#     sampwidth=2
+# )
 
 
+# t.export_multitrack(
+#     frames=frames_out,
+#     name="prova_multitrack",
+#     sample_rate=sample_rate,
+#     sampwidth=2
+# )
 
 # f = np.array(frames_out, dtype=object)
 

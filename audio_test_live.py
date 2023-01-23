@@ -36,7 +36,6 @@ angle = 0
 step = 0.1
 while file_data:
     out = tools.to_nchnls(input_sig=file_data, nchnls=CHNLS, format=np.int16)
-    out = np.nan_to_num(out)
     source = pan.pol_to_cart(rho=np.random.rand(), phi=angle, mode="deg")
     g = pan.calculate_gains(source=source, normalize=True, mode="ray")
     angle += step
