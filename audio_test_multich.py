@@ -4,7 +4,7 @@ import pannix as px
 import tools as t
 
 FILE = "./audio_file/vox.wav"
-CHNLS = 8
+CHNLS = 21
 CHUNK = 1024
 
 # open file
@@ -38,21 +38,21 @@ while ad:
 
     ad = af.readframes(CHUNK)
 
-# t.save_audio_file(
-#     path="multich.wav", 
-#     frames=frames, 
-#     sample_rate=af.getframerate(),
-#     nchnls=CHNLS,
-#     sampwidth=2
-# )
-
-
-t.export_multitrack(
-    frames=frames_to_export,
-    name="prova_multitrack",
-    sample_rate=sample_rate,
+t.save_audio_file(
+    path="multich.wav", 
+    frames=frames, 
+    sample_rate=af.getframerate(),
+    nchnls=CHNLS,
     sampwidth=2
 )
+
+
+# t.export_multitrack(
+#     frames=frames_to_export,
+#     name="prova_multitrack",
+#     sample_rate=sample_rate,
+#     sampwidth=2
+# )
 
 # f = np.array(frames_out, dtype=object)
 

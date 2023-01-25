@@ -4,7 +4,6 @@ import pyaudio as pa
 import wave
 import tools
 
-
 FILE = "./audio_file/vox.wav"
 CHUNK = 512
 
@@ -34,7 +33,7 @@ pan = px.VBAP(loudspeaker_loc=[90, 0])
 
 angle = 0
 step = 0.1
-while file_data:
+while True:
     out = tools.to_nchnls(input_sig=file_data, nchnls=CHNLS, format=np.int16)
     source = pan.pol_to_cart(rho=np.random.rand(), phi=angle, mode="deg")
     g = pan.calculate_gains(source=source, normalize=True, mode="ray")
@@ -44,6 +43,9 @@ while file_data:
         out[:, i] = out[:, i] * g[i]
     y = out.tobytes()
     stream.write(y)
+    # play loop
+    if file_data == b'':
+        audio_file.rewind()
     file_data = audio_file.readframes(CHUNK)
 
 stream.stop_stream()
@@ -51,6 +53,7 @@ stream.close()
 p.terminate()
 audio_file.close()
 
+win.mainloop()
 
 
 
