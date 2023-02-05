@@ -6,7 +6,7 @@ r = Ray()
 phi = 25 * np.pi/180
 
 source = np.array([np.cos(phi), np.sin(phi)])
-r.set_position(pos=source)
+r.set_source_position(pos=source)
 
 ls_phi = 45 * np.pi/180
 ls1 = np.array([np.cos(-ls_phi), np.sin(-ls_phi)])

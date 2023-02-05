@@ -12,6 +12,8 @@ af = wave.open(FILE, "rb")
 sample_rate = af.getframerate()
 ad = af.readframes(CHUNK)
 
+b = np.frombuffer(ad).astype(np.float64)
+
 # define VBAP panner
 pan = px.VBAP(loudspeaker_num=CHNLS)
 
@@ -38,21 +40,21 @@ while ad:
 
     ad = af.readframes(CHUNK)
 
-t.save_audio_file(
-    path="multich.wav", 
-    frames=frames, 
-    sample_rate=af.getframerate(),
-    nchnls=CHNLS,
-    sampwidth=2
-)
-
-
-# t.export_multitrack(
-#     frames=frames_to_export,
-#     name="prova_multitrack",
-#     sample_rate=sample_rate,
+# t.save_audio_file(
+#     path="multich_test.wav", 
+#     frames=frames, 
+#     sample_rate=af.getframerate(),
+#     nchnls=CHNLS,
 #     sampwidth=2
 # )
+
+
+t.export_multitrack(
+    frames=frames_to_export,
+    name="prova_multitrack_2",
+    sample_rate=sample_rate,
+    sampwidth=2
+)
 
 # f = np.array(frames_out, dtype=object)
 

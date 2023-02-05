@@ -39,7 +39,7 @@ class Pannix:
         only the number of loudspeaker
         loudspeaker_num: int|None, number of loudspeaker if loudspeaker_loc is None
         """
-
+        self.source = (0, 0)
         loc = self.__define_loudspeaker_loc(loc=loudspeaker_loc, num=loudspeaker_num)
 
         _phi_deg = []
@@ -175,7 +175,6 @@ class Pannix:
         plt.show()
 
 
-
 class VBAP(Pannix):
 
     def __init__(
@@ -248,6 +247,8 @@ class VBAP(Pannix):
         """
 
         self.__mode_find_arc = mode
+        
+        r = Ray()
 
         angle = np.round(np.arctan2(source[1], source[0]), decimals=15)
         
@@ -255,8 +256,7 @@ class VBAP(Pannix):
             if mode == "default":
                 arc = self.find_arc(source=source, angle=angle)
             elif mode == "ray":
-                r = Ray()
-                r.set_position(pos=source)
+                r.set_source_position(pos=source)
                 arc = self.ray_cast_find_arc(ray=r, angle=angle)
                 arc = arc if arc is not None else -1
             else:
